@@ -1,0 +1,1642 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI HR Онбординг — Інтерактивна демонстрація</title>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@300;400;600;700;900&family=IBM+Plex+Mono:wght@300;400;500&family=Manrope:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #080a0e;
+  --s1: #0e1118;
+  --s2: #141720;
+  --s3: #1a1f2e;
+  --border: #1e2535;
+  --border2: #252d40;
+  --gold: #e8c44a;
+  --gold2: #f5d96b;
+  --green: #3dd68c;
+  --blue: #4a9ee8;
+  --red: #e85a4a;
+  --purple: #a78bfa;
+  --text: #eef0f6;
+  --t2: #7c87a0;
+  --t3: #3a4258;
+  --tg-bg: #17212b;
+  --tg-msg: #2b5278;
+  --tg-bot: #182533;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Manrope', sans-serif;
+  overflow-x: hidden;
+}
+
+/* NOISE TEXTURE */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 999;
+  opacity: 0.4;
+}
+
+/* GRID */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(232,196,74,0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(232,196,74,0.025) 1px, transparent 1px);
+  background-size: 48px 48px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ========== HERO ========== */
+.hero {
+  position: relative;
+  z-index: 1;
+  padding: 64px 48px 48px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.hero-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(232,196,74,0.07);
+  border: 1px solid rgba(232,196,74,0.18);
+  padding: 7px 16px;
+  border-radius: 100px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: var(--gold);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 28px;
+}
+
+.hero-tag::before {
+  content: '';
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--gold);
+  animation: blink 2s infinite;
+}
+
+@keyframes blink {
+  0%,100% { opacity:1; box-shadow: 0 0 6px var(--gold); }
+  50% { opacity:0.3; box-shadow: none; }
+}
+
+.hero h1 {
+  font-family: 'Unbounded', sans-serif;
+  font-size: clamp(28px, 5vw, 56px);
+  font-weight: 900;
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+  margin-bottom: 20px;
+}
+
+.hero h1 em {
+  font-style: normal;
+  color: var(--gold);
+  position: relative;
+}
+
+.hero-sub {
+  font-size: 16px;
+  color: var(--t2);
+  font-weight: 300;
+  max-width: 600px;
+  line-height: 1.7;
+  margin-bottom: 40px;
+}
+
+/* STATS BAR */
+.stats-bar {
+  display: flex;
+  gap: 0;
+  background: var(--s1);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  overflow: hidden;
+  margin-bottom: 56px;
+}
+
+.stat-item {
+  flex: 1;
+  padding: 24px 28px;
+  border-right: 1px solid var(--border);
+  position: relative;
+  overflow: hidden;
+}
+
+.stat-item:last-child { border-right: none; }
+
+.stat-item::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+}
+
+.stat-item.g::before { background: var(--gold); }
+.stat-item.gr::before { background: var(--green); }
+.stat-item.b::before { background: var(--blue); }
+.stat-item.r::before { background: var(--red); }
+
+.stat-n {
+  font-family: 'Unbounded', sans-serif;
+  font-size: 36px;
+  font-weight: 700;
+  line-height: 1;
+  margin-bottom: 6px;
+}
+
+.stat-item.g .stat-n { color: var(--gold); }
+.stat-item.gr .stat-n { color: var(--green); }
+.stat-item.b .stat-n { color: var(--blue); }
+.stat-item.r .stat-n { color: var(--red); }
+
+.stat-l {
+  font-size: 12px;
+  color: var(--t2);
+  font-weight: 300;
+  line-height: 1.4;
+}
+
+/* ========== SECTION TITLE ========== */
+.section-wrap {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 48px 80px;
+  position: relative;
+  z-index: 1;
+}
+
+.section-head {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 36px;
+}
+
+.section-num {
+  font-family: 'Unbounded', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--gold);
+  background: rgba(232,196,74,0.08);
+  border: 1px solid rgba(232,196,74,0.2);
+  padding: 6px 14px;
+  border-radius: 8px;
+  letter-spacing: 0.05em;
+}
+
+.section-title {
+  font-family: 'Unbounded', sans-serif;
+  font-size: clamp(18px, 3vw, 28px);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.section-title span { color: var(--gold); }
+
+/* ========== TELEGRAM DEMO ========== */
+.demo-layout {
+  display: grid;
+  grid-template-columns: 380px 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+@media(max-width: 900px) { .demo-layout { grid-template-columns: 1fr; } }
+
+/* Phone mockup */
+.phone-wrap {
+  position: sticky;
+  top: 24px;
+}
+
+.phone {
+  background: #1c1c1e;
+  border-radius: 48px;
+  padding: 12px;
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,0.06),
+    0 40px 80px rgba(0,0,0,0.6),
+    inset 0 1px 0 rgba(255,255,255,0.08);
+  position: relative;
+}
+
+.phone-inner {
+  background: var(--tg-bg);
+  border-radius: 38px;
+  overflow: hidden;
+  height: 680px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* TG Header */
+.tg-header {
+  background: #17212b;
+  padding: 16px 20px 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  flex-shrink: 0;
+}
+
+.tg-avatar {
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #4a9ee8, #2d7dd2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.tg-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: #fff;
+  line-height: 1.2;
+}
+
+.tg-status {
+  font-size: 12px;
+  color: var(--green);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.tg-status::before {
+  content: '';
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: var(--green);
+}
+
+/* TG Messages */
+.tg-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  scrollbar-width: none;
+}
+
+.tg-messages::-webkit-scrollbar { display: none; }
+
+.msg {
+  display: flex;
+  flex-direction: column;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: all 0.3s ease;
+  margin-bottom: 2px;
+}
+
+.msg.show { opacity: 1; transform: translateY(0); }
+
+.msg.bot { align-items: flex-start; }
+.msg.user { align-items: flex-end; }
+
+.msg-bubble {
+  max-width: 78%;
+  padding: 10px 14px;
+  border-radius: 16px;
+  font-size: 13px;
+  line-height: 1.5;
+  position: relative;
+}
+
+.msg.bot .msg-bubble {
+  background: var(--tg-bot);
+  border-radius: 4px 16px 16px 16px;
+  color: #e8eaf0;
+}
+
+.msg.user .msg-bubble {
+  background: var(--tg-msg);
+  border-radius: 16px 4px 16px 16px;
+  color: #fff;
+}
+
+.msg-time {
+  font-size: 10px;
+  color: rgba(255,255,255,0.3);
+  margin-top: 3px;
+  padding: 0 4px;
+}
+
+.msg-emoji { font-size: 16px; margin-bottom: 2px; }
+
+/* Quick replies */
+.tg-replies {
+  padding: 10px 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  background: rgba(0,0,0,0.2);
+  border-top: 1px solid rgba(255,255,255,0.04);
+  flex-shrink: 0;
+  min-height: 60px;
+  align-items: center;
+}
+
+.reply-btn {
+  background: rgba(74,158,232,0.15);
+  border: 1px solid rgba(74,158,232,0.3);
+  color: #4a9ee8;
+  padding: 8px 14px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-family: 'Manrope', sans-serif;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.reply-btn:hover {
+  background: rgba(74,158,232,0.3);
+  transform: scale(1.03);
+}
+
+.reply-btn:disabled {
+  opacity: 0.3;
+  cursor: default;
+  transform: none;
+}
+
+/* Typing indicator */
+.typing {
+  display: none;
+  align-items: center;
+  gap: 4px;
+  padding: 10px 14px;
+  background: var(--tg-bot);
+  border-radius: 4px 16px 16px 16px;
+  width: fit-content;
+  margin-bottom: 4px;
+}
+
+.typing.show { display: flex; }
+
+.typing span {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--t2);
+  animation: typingDot 1.2s infinite;
+}
+
+.typing span:nth-child(2) { animation-delay: 0.2s; }
+.typing span:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes typingDot {
+  0%,60%,100% { transform: translateY(0); opacity: 0.4; }
+  30% { transform: translateY(-4px); opacity: 1; }
+}
+
+/* Right side: explanation */
+.demo-info {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.info-card {
+  background: var(--s1);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 24px;
+  transition: all 0.3s;
+  position: relative;
+  overflow: hidden;
+}
+
+.info-card::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 3px;
+  background: var(--border2);
+  transition: background 0.3s;
+}
+
+.info-card.active-step::before { background: var(--gold); }
+.info-card.active-step { border-color: rgba(232,196,74,0.2); }
+
+.info-step {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  color: var(--t3);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 8px;
+  transition: color 0.3s;
+}
+
+.info-card.active-step .info-step { color: var(--gold); }
+
+.info-title {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: var(--text);
+}
+
+.info-desc {
+  font-size: 13px;
+  color: var(--t2);
+  line-height: 1.6;
+  font-weight: 300;
+}
+
+.info-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.itag {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  padding: 3px 10px;
+  border-radius: 4px;
+  background: rgba(232,196,74,0.06);
+  border: 1px solid rgba(232,196,74,0.12);
+  color: var(--gold);
+}
+
+.itag.blue {
+  background: rgba(74,158,232,0.06);
+  border-color: rgba(74,158,232,0.12);
+  color: var(--blue);
+}
+
+.itag.green {
+  background: rgba(61,214,140,0.06);
+  border-color: rgba(61,214,140,0.12);
+  color: var(--green);
+}
+
+/* Progress indicator */
+.progress-indicator {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 20px;
+}
+
+.prog-dot {
+  height: 4px;
+  border-radius: 2px;
+  background: var(--border2);
+  transition: all 0.4s;
+  flex: 1;
+}
+
+.prog-dot.done { background: var(--gold); }
+.prog-dot.active { background: var(--gold); animation: progPulse 1s infinite; }
+
+@keyframes progPulse {
+  0%,100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* Restart btn */
+.restart-btn {
+  display: none;
+  background: rgba(232,196,74,0.08);
+  border: 1px solid rgba(232,196,74,0.2);
+  color: var(--gold);
+  padding: 12px 24px;
+  border-radius: 10px;
+  font-family: 'Manrope', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-top: 8px;
+}
+
+.restart-btn:hover {
+  background: rgba(232,196,74,0.15);
+}
+
+/* ========== LMS SECTION ========== */
+.lms-wrap {
+  background: var(--s1);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  overflow: hidden;
+}
+
+.lms-topbar {
+  background: var(--s2);
+  border-bottom: 1px solid var(--border);
+  padding: 14px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.lms-logo {
+  font-family: 'Unbounded', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.lms-logo span { color: var(--gold); }
+
+.lms-user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--t2);
+}
+
+.lms-avatar {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--gold), #c8a030);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  color: #0a0c0f;
+}
+
+.lms-body {
+  display: grid;
+  grid-template-columns: 240px 1fr 300px;
+  min-height: 600px;
+}
+
+@media(max-width: 1100px) { .lms-body { grid-template-columns: 1fr; } }
+
+/* Sidebar */
+.lms-sidebar {
+  border-right: 1px solid var(--border);
+  padding: 20px 0;
+}
+
+.sidebar-section {
+  padding: 0 16px;
+  margin-bottom: 24px;
+}
+
+.sidebar-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  color: var(--t3);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  padding: 0 8px;
+  margin-bottom: 8px;
+}
+
+.sidebar-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-size: 13px;
+  color: var(--t2);
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-bottom: 2px;
+}
+
+.sidebar-item:hover { background: var(--s3); color: var(--text); }
+.sidebar-item.active { background: rgba(232,196,74,0.08); color: var(--gold); }
+
+.sidebar-icon { font-size: 15px; }
+
+.sidebar-badge {
+  margin-left: auto;
+  background: var(--gold);
+  color: #0a0c0f;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 100px;
+}
+
+/* Main content */
+.lms-main {
+  padding: 28px;
+  overflow-y: auto;
+}
+
+.lms-welcome {
+  background: linear-gradient(135deg, rgba(232,196,74,0.08), rgba(61,214,140,0.04));
+  border: 1px solid rgba(232,196,74,0.15);
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.lms-welcome-icon { font-size: 32px; }
+
+.lms-welcome h3 {
+  font-family: 'Unbounded', sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.lms-welcome p { font-size: 13px; color: var(--t2); font-weight: 300; }
+
+/* Course list */
+.course-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.course-item {
+  background: var(--s2);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 18px 20px;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+  overflow: hidden;
+}
+
+.course-item:hover { border-color: var(--border2); transform: translateX(4px); }
+.course-item.active-course { border-color: rgba(232,196,74,0.3); background: rgba(232,196,74,0.04); }
+
+.course-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.course-name {
+  font-size: 13px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.course-status {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  padding: 3px 10px;
+  border-radius: 100px;
+}
+
+.course-status.done { background: rgba(61,214,140,0.1); color: var(--green); border: 1px solid rgba(61,214,140,0.2); }
+.course-status.progress { background: rgba(232,196,74,0.1); color: var(--gold); border: 1px solid rgba(232,196,74,0.2); }
+.course-status.locked { background: rgba(255,255,255,0.04); color: var(--t3); border: 1px solid var(--border); }
+
+.course-bar {
+  height: 4px;
+  background: var(--border);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.course-fill {
+  height: 100%;
+  border-radius: 2px;
+  background: linear-gradient(90deg, var(--gold), var(--gold2));
+  transition: width 1s ease;
+}
+
+.course-fill.g { background: linear-gradient(90deg, var(--green), #5ff0a0); }
+
+.course-meta {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 6px;
+  font-size: 11px;
+  color: var(--t3);
+  font-family: 'IBM Plex Mono', monospace;
+}
+
+/* AI Assistant panel */
+.lms-ai {
+  border-left: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+}
+
+.ai-header {
+  padding: 20px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.ai-orb {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--gold), #c8a030);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  animation: orbPulse 3s infinite;
+}
+
+@keyframes orbPulse {
+  0%,100% { box-shadow: 0 0 0 0 rgba(232,196,74,0.3); }
+  50% { box-shadow: 0 0 0 8px rgba(232,196,74,0); }
+}
+
+.ai-header-text { flex: 1; }
+.ai-name { font-size: 13px; font-weight: 600; }
+.ai-sub { font-size: 11px; color: var(--green); display: flex; align-items: center; gap: 4px; }
+.ai-sub::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: var(--green); }
+
+.ai-messages {
+  flex: 1;
+  padding: 16px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  scrollbar-width: none;
+}
+
+.ai-messages::-webkit-scrollbar { display: none; }
+
+.ai-msg {
+  font-size: 12px;
+  line-height: 1.6;
+  padding: 12px 14px;
+  border-radius: 12px;
+  opacity: 0;
+  transform: translateY(6px);
+  transition: all 0.3s;
+}
+
+.ai-msg.show { opacity: 1; transform: translateY(0); }
+
+.ai-msg.assistant {
+  background: var(--s3);
+  border: 1px solid var(--border2);
+  color: var(--text);
+}
+
+.ai-msg.system {
+  background: rgba(232,196,74,0.06);
+  border: 1px solid rgba(232,196,74,0.12);
+  color: var(--gold);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+}
+
+.ai-msg.alert {
+  background: rgba(61,214,140,0.06);
+  border: 1px solid rgba(61,214,140,0.15);
+  color: var(--green);
+  font-size: 11px;
+}
+
+.ai-input-wrap {
+  padding: 14px 16px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  gap: 8px;
+}
+
+.ai-input {
+  flex: 1;
+  background: var(--s3);
+  border: 1px solid var(--border2);
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-family: 'Manrope', sans-serif;
+  font-size: 12px;
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.ai-input:focus { border-color: rgba(232,196,74,0.3); }
+.ai-input::placeholder { color: var(--t3); }
+
+.ai-send {
+  width: 38px; height: 38px;
+  border-radius: 10px;
+  background: var(--gold);
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  transition: all 0.2s;
+  color: #0a0c0f;
+  flex-shrink: 0;
+}
+
+.ai-send:hover { background: var(--gold2); transform: scale(1.05); }
+
+/* AI Suggestion chips */
+.ai-suggestions {
+  padding: 0 16px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.suggest-chip {
+  background: var(--s2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 11px;
+  color: var(--t2);
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.suggest-chip:hover { border-color: rgba(232,196,74,0.2); color: var(--gold); background: rgba(232,196,74,0.04); }
+.suggest-chip::before { content: '→'; color: var(--t3); font-size: 10px; }
+
+/* ========== ROI SECTION ========== */
+.roi-section {
+  background: var(--s1);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 40px;
+}
+
+.roi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+  margin-bottom: 32px;
+}
+
+.roi-card {
+  background: var(--s2);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 24px;
+  text-align: center;
+  transition: all 0.2s;
+}
+
+.roi-card:hover { border-color: rgba(232,196,74,0.2); transform: translateY(-4px); }
+
+.roi-emoji { font-size: 28px; margin-bottom: 12px; }
+
+.roi-num {
+  font-family: 'Unbounded', sans-serif;
+  font-size: 30px;
+  font-weight: 700;
+  color: var(--gold);
+  line-height: 1;
+  margin-bottom: 6px;
+}
+
+.roi-label { font-size: 12px; color: var(--t2); font-weight: 300; line-height: 1.4; }
+
+/* Compare bars */
+.compare-section { margin-top: 32px; }
+
+.compare-title {
+  font-family: 'Unbounded', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 24px;
+  letter-spacing: -0.01em;
+}
+
+.compare-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.compare-label {
+  width: 220px;
+  font-size: 12px;
+  color: var(--t2);
+  flex-shrink: 0;
+}
+
+.compare-bars {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.cbar-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.cbar-tag {
+  width: 50px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  color: var(--t3);
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.cbar {
+  flex: 1;
+  height: 8px;
+  background: var(--border);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.cbar-fill {
+  height: 100%;
+  border-radius: 4px;
+  width: 0;
+  transition: width 1.2s ease;
+}
+
+.cbar-fill.bad { background: var(--red); }
+.cbar-fill.good { background: var(--green); }
+.cbar-fill.mid { background: var(--blue); }
+
+.cbar-val {
+  width: 40px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  color: var(--text);
+  flex-shrink: 0;
+}
+
+/* CTA */
+.cta-final {
+  background: linear-gradient(135deg, rgba(232,196,74,0.08) 0%, rgba(61,214,140,0.04) 100%);
+  border: 1px solid rgba(232,196,74,0.2);
+  border-radius: 20px;
+  padding: 48px;
+  text-align: center;
+  margin-top: 24px;
+}
+
+.cta-final h2 {
+  font-family: 'Unbounded', sans-serif;
+  font-size: clamp(20px, 3vw, 32px);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin-bottom: 12px;
+}
+
+.cta-final p {
+  color: var(--t2);
+  font-size: 15px;
+  font-weight: 300;
+  margin-bottom: 32px;
+}
+
+.cta-btn {
+  display: inline-block;
+  background: var(--gold);
+  color: #080a0e;
+  padding: 18px 48px;
+  border-radius: 14px;
+  font-family: 'Unbounded', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  border: none;
+  cursor: pointer;
+  transition: all 0.25s;
+  text-decoration: none;
+}
+
+.cta-btn:hover {
+  background: var(--gold2);
+  transform: translateY(-3px);
+  box-shadow: 0 16px 40px rgba(232,196,74,0.25);
+}
+
+/* Divider */
+.divider {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin: 64px 0 48px;
+}
+
+.divider::before, .divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+.divider span {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  color: var(--t3);
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  white-space: nowrap;
+}
+
+/* Animate in */
+.fade-in {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: all 0.6s ease;
+}
+
+.fade-in.visible { opacity: 1; transform: translateY(0); }
+
+/* Intro block */
+.intro-block {
+  background: var(--s1);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 36px;
+  margin-top: 32px;
+}
+
+.intro-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 32px;
+}
+
+@media(max-width: 900px) { .intro-row { grid-template-columns: 1fr; } }
+
+.intro-col { }
+
+.intro-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  color: var(--gold);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  margin-bottom: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(232,196,74,0.15);
+}
+
+.intro-col p {
+  font-size: 14px;
+  color: var(--t2);
+  line-height: 1.85;
+  font-weight: 300;
+}
+
+.intro-col p br + br {
+  display: block;
+  content: '';
+  margin-top: 8px;
+}
+
+.intro-col p strong {
+  color: var(--text);
+  font-weight: 600;
+  display: inline-block;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+</style>
+</head>
+<body>
+
+<!-- HERO -->
+<div class="hero fade-in visible">
+  <div class="hero-tag">ProPersonal Agency — AI HR Demo</div>
+  <h1>AI-команда<br><em>HR Онбординг</em><br>у дії</h1>
+
+  <div class="intro-block">
+    <div class="intro-row">
+      <div class="intro-col">
+        <div class="intro-label">Яка проблема</div>
+        <p>На виробничих підприємствах із сотнями і тисячами співробітників онбординг — це постійний ручний процес. Кожен новий співробітник потребує від HR-фахівця 8+ годин: передача документів, пояснення регламентів, інструктажі, тестування. Все залежить від конкретної людини, не масштабується і не дає HR-відділу займатись стратегічними завданнями.</p>
+      </div>
+      <div class="intro-col">
+        <div class="intro-label">Що автоматизує</div>
+        <p>Два паралельних AI-рішення, які закривають весь процес онбордингу без участі HR-менеджера:<br><br><strong>Telegram AI-агент</strong> — веде нового лінійного співробітника від першого дня до допуску через звичний месенджер.<br><br><strong>AI-інтеграція з LMS</strong> — підсилює існуючу навчальну платформу персоналізованим асистентом для менеджменту і топів.</p>
+      </div>
+      <div class="intro-col">
+        <div class="intro-label">Як користуватись цією презентацією</div>
+        <p>Це не слайди — це жива демонстрація.<br><br><strong>Рішення 1:</strong> натискайте кнопки в телефоні — ви побачите як Олександр, новий співробітник виробництва, проходить реальний онбординг через бот.<br><br><strong>Рішення 2:</strong> взаємодійте з LMS-інтерфейсом — клікайте на курси, задавайте питання AI-асистенту.<br><br>Все що ви бачите працює саме так у реальному впровадженні.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SECTION 1: TELEGRAM -->
+<div class="section-wrap">
+  <div class="section-head fade-in">
+    <div class="section-num">РІШЕННЯ 01</div>
+    <div class="section-title">Telegram <span>AI-агент</span> для лінійного персоналу</div>
+  </div>
+
+  <div class="demo-layout fade-in">
+    <!-- Phone -->
+    <div class="phone-wrap">
+      <div class="phone">
+        <div class="phone-inner">
+          <div class="tg-header">
+            <div class="tg-avatar">🤖</div>
+            <div>
+              <div class="tg-name">Company HR Bot</div>
+              <div class="tg-status">онлайн • AI-агент</div>
+            </div>
+          </div>
+
+          <div class="tg-messages" id="tgMessages">
+            <div class="typing" id="typing">
+              <span></span><span></span><span></span>
+            </div>
+          </div>
+
+          <div class="tg-replies" id="tgReplies"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right info -->
+    <div class="demo-info">
+      <div class="progress-indicator" id="progIndicator">
+        <div class="prog-dot active" id="pd0"></div>
+        <div class="prog-dot" id="pd1"></div>
+        <div class="prog-dot" id="pd2"></div>
+        <div class="prog-dot" id="pd3"></div>
+        <div class="prog-dot" id="pd4"></div>
+        <div class="prog-dot" id="pd5"></div>
+      </div>
+
+      <div class="info-card active-step" id="ic0">
+        <div class="info-step">КРОК 01 • СТАРТ</div>
+        <div class="info-title">Перший контакт — автоматично</div>
+        <div class="info-desc">Як тільки новий співробітник отримує посилання на бот — система запускається автоматично. HR не задіяний. Олександр отримує привітання, бот збирає базові дані.</div>
+        <div class="info-tags">
+          <span class="itag blue">Telegram Bot API</span>
+          <span class="itag">Make.com</span>
+          <span class="itag green">24/7 доступний</span>
+        </div>
+      </div>
+
+      <div class="info-card" id="ic1">
+        <div class="info-step">КРОК 02 • ДОКУМЕНТИ</div>
+        <div class="info-title">Регламенти та інструкції — миттєво</div>
+        <div class="info-desc">Бот автоматично надсилає пакет документів під конкретну посаду. Правила HACCP, техніка безпеки, внутрішні регламенти — все в чат.</div>
+        <div class="info-tags">
+          <span class="itag">Google Drive інтеграція</span>
+          <span class="itag blue">PDF автоматично</span>
+        </div>
+      </div>
+
+      <div class="info-card" id="ic2">
+        <div class="info-step">КРОК 03 • НАВЧАННЯ</div>
+        <div class="info-title">AI відповідає на питання замість HR</div>
+        <div class="info-desc">Співробітник може задати будь-яке питання по регламентах і отримає відповідь негайно. ChatGPT API навчений на внутрішній базі знань компанії.</div>
+        <div class="info-tags">
+          <span class="itag">ChatGPT API</span>
+          <span class="itag green">База знань компанії</span>
+        </div>
+      </div>
+
+      <div class="info-card" id="ic3">
+        <div class="info-step">КРОК 04 • ТЕСТ</div>
+        <div class="info-title">Автоматичне тестування знань</div>
+        <div class="info-desc">Бот проводить тест по пройденому матеріалу. Результати фіксуються автоматично. При успішному проходженні — повідомлення керівнику зміни про допуск.</div>
+        <div class="info-tags">
+          <span class="itag">Автозвіт → HR</span>
+          <span class="itag blue">Google Sheets</span>
+        </div>
+      </div>
+
+      <div class="info-card" id="ic4">
+        <div class="info-step">КРОК 05 • ДОПУСК</div>
+        <div class="info-title">Керівник отримує сповіщення</div>
+        <div class="info-desc">Після успішного тесту система автоматично повідомляє керівника зміни і HR про готовність співробітника. Жодного ручного кроку.</div>
+        <div class="info-tags">
+          <span class="itag green">Telegram керівнику</span>
+          <span class="itag">Email HR</span>
+        </div>
+      </div>
+
+      <button class="restart-btn" id="restartBtn" onclick="restartDemo()">↺ Запустити демо знову</button>
+    </div>
+  </div>
+</div>
+
+<div class="divider"><span>Рішення 02 — для менеджменту та топів</span></div>
+
+<!-- SECTION 2: LMS -->
+<div class="section-wrap">
+  <div class="section-head fade-in">
+    <div class="section-num">РІШЕННЯ 02</div>
+    <div class="section-title">AI-інтеграція з <span>LMS платформою</span></div>
+  </div>
+
+  <div class="lms-wrap fade-in">
+    <div class="lms-topbar">
+      <div class="lms-logo">Company <span>Learning</span></div>
+      <div class="lms-user">
+        <div class="lms-avatar">О</div>
+        Олександр · Керівник відділу
+      </div>
+    </div>
+
+    <div class="lms-body">
+      <!-- Sidebar -->
+      <div class="lms-sidebar">
+        <div class="sidebar-section">
+          <div class="sidebar-label">Навігація</div>
+          <div class="sidebar-item active" onclick="lmsNav(this, 'courses')">
+            <span class="sidebar-icon">📚</span> Мої курси
+            <span class="sidebar-badge">3</span>
+          </div>
+          <div class="sidebar-item" onclick="lmsNav(this, 'progress')">
+            <span class="sidebar-icon">📊</span> Прогрес
+          </div>
+          <div class="sidebar-item" onclick="lmsNav(this, 'reports')">
+            <span class="sidebar-icon">📋</span> Звіти
+          </div>
+        </div>
+        <div class="sidebar-section">
+          <div class="sidebar-label">AI-функції</div>
+          <div class="sidebar-item" onclick="lmsNav(this, 'path')">
+            <span class="sidebar-icon">🎯</span> Мій шлях
+          </div>
+          <div class="sidebar-item" onclick="lmsNav(this, 'analytics')">
+            <span class="sidebar-icon">🧠</span> AI-аналітика
+          </div>
+        </div>
+      </div>
+
+      <!-- Main -->
+      <div class="lms-main" id="lmsMain">
+        <div class="lms-welcome">
+          <div class="lms-welcome-icon">👋</div>
+          <div>
+            <h3>Доброго дня, Олександре!</h3>
+            <p>AI-асистент проаналізував ваш прогрес і підготував персоналізований план на тиждень</p>
+          </div>
+        </div>
+
+        <div class="course-grid" id="courseGrid">
+          <div class="course-item active-course" onclick="selectCourse(this, 'haccp')">
+            <div class="course-top">
+              <div class="course-name">🏭 Стандарти HACCP</div>
+              <div class="course-status progress">В процесі</div>
+            </div>
+            <div class="course-bar"><div class="course-fill" style="width:65%"></div></div>
+            <div class="course-meta"><span>65% завершено</span><span>~2 год залишилось</span></div>
+          </div>
+
+          <div class="course-item" onclick="selectCourse(this, 'safety')">
+            <div class="course-top">
+              <div class="course-name">⚠️ Техніка безпеки виробництва</div>
+              <div class="course-status done">Завершено</div>
+            </div>
+            <div class="course-bar"><div class="course-fill g" style="width:100%"></div></div>
+            <div class="course-meta"><span>100% • Оцінка: 94/100</span><span>✓ Сертифікат</span></div>
+          </div>
+
+          <div class="course-item" onclick="selectCourse(this, 'management')">
+            <div class="course-top">
+              <div class="course-name">👥 Управління командою</div>
+              <div class="course-status locked">Заблоковано</div>
+            </div>
+            <div class="course-bar"><div class="course-fill" style="width:0%"></div></div>
+            <div class="course-meta"><span>Доступно після HACCP</span><span>4 год</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- AI Panel -->
+      <div class="lms-ai">
+        <div class="ai-header">
+          <div class="ai-orb">✨</div>
+          <div class="ai-header-text">
+            <div class="ai-name">AI-асистент</div>
+            <div class="ai-sub">активний • аналізує ваш прогрес</div>
+          </div>
+        </div>
+
+        <div class="ai-messages" id="aiMessages">
+          <div class="ai-msg system show">→ Аналіз профілю Олександра завершено</div>
+          <div class="ai-msg assistant show">
+            Олександре, я проаналізував ваш прогрес. У модулі HACCP ви показали сильні результати в розділі "Температурний контроль", але є складності з розділом "Документування відхилень" — рекомендую пройти його ще раз.
+          </div>
+          <div class="ai-msg alert show">⚡ Курс "Управління командою" буде розблоковано після завершення HACCP</div>
+        </div>
+
+        <div class="ai-suggestions" id="aiSuggestions">
+          <div class="suggest-chip" onclick="askAI(this, 'Що таке критичні контрольні точки HACCP?')">Поясни критичні контрольні точки</div>
+          <div class="suggest-chip" onclick="askAI(this, 'Як правильно документувати відхилення?')">Як документувати відхилення?</div>
+          <div class="suggest-chip" onclick="askAI(this, 'Покажи мій звіт для HR')">Мій звіт для HR</div>
+        </div>
+
+        <div class="ai-input-wrap">
+          <input class="ai-input" id="aiInput" placeholder="Запитайте AI-асистента..." onkeydown="if(event.key==='Enter') sendAIMsg()">
+          <button class="ai-send" onclick="sendAIMsg()">↑</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+<script>
+// ============ TELEGRAM DEMO ============
+const tgScenario = [
+  {
+    bot: "👋 Привіт, Олександре! Я корпоративний HR-бот.\n\nВітаємо в команді! Я допоможу тобі пройти онбординг швидко і без зайвих питань до HR. Це займе ~30 хвилин.",
+    replies: ["Привіт! Готовий починати"],
+    step: 0
+  },
+  {
+    user: "Привіт! Готовий починати",
+    bot: "Чудово! 🎉\n\nПочинаємо з документів. Я надсилаю тобі:\n\n📄 Правила внутрішнього розпорядку\n⚠️ Інструкція з техніки безпеки\n🏭 Стандарти HACCP для виробництва\n\nОзнайомся, потім будемо тестуватися. Є питання по документах?",
+    replies: ["Отримав, ознайомився", "Є питання по HACCP"],
+    step: 1
+  },
+  {
+    user: "Є питання по HACCP",
+    bot: "Звичайно, питай! Я знаю всю базу знань компанії 🧠\n\nЩо саме незрозуміло?",
+    replies: ["Що таке критичні контрольні точки?", "Зрозумів, йдемо далі"],
+    step: 2
+  },
+  {
+    user: "Що таке критичні контрольні точки?",
+    bot: "Критична контрольна точка (ССР) — це етап виробничого процесу, де ризик небезпеки для продукту максимальний і де можна застосувати контроль.\n\n📌 На вашому виробництві це:\n• Температура при зберіганні м'яса: не вище +4°C\n• Температура при термообробці: не нижче +72°C\n• Металодетектор на виході лінії\n\nЗрозуміло?",
+    replies: ["Зрозумів, дякую!", "Ще питання є"],
+    step: 2
+  },
+  {
+    user: "Зрозумів, дякую!",
+    bot: "Відмінно! 💪 Тепер коротке тестування — 5 питань по матеріалу.\n\nПитання 1️⃣: До якої температури потрібно охолодити м'ясну продукцію при зберіганні?",
+    replies: ["+4°C або нижче", "+10°C", "+8°C"],
+    step: 3
+  },
+  {
+    user: "+4°C або нижче",
+    bot: "✅ Правильно! Молодець!\n\nПитання 2️⃣: Що потрібно зробити при виявленні відхилення від норми?",
+    replies: ["Зупинити процес і повідомити керівника", "Продовжити роботу", "Записати і продовжити"],
+    step: 3
+  },
+  {
+    user: "Зупинити процес і повідомити керівника",
+    bot: "✅ Абсолютно вірно!\n\n🎉 Тест пройдено успішно!\nРезультат: 5/5 — Відмінно!\n\nЯ автоматично:\n📩 Повідомив HR про твій допуск\n📊 Зберіг результати в системі\n👷 Надіслав керівнику зміни\n\nОлександре, ти офіційно допущений до роботи! Успіхів! 🚀",
+    replies: [],
+    step: 4
+  }
+];
+
+let currentStep = 0;
+let isTyping = false;
+
+function getTime() {
+  const now = new Date();
+  return now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
+}
+
+function addMsg(type, text, delay = 0) {
+  return new Promise(resolve => {
+    setTimeout(() => {
+      const msgs = document.getElementById('tgMessages');
+      const typing = document.getElementById('typing');
+
+      if (type === 'bot') {
+        typing.classList.add('show');
+        msgs.scrollTop = msgs.scrollHeight;
+
+        setTimeout(() => {
+          typing.classList.remove('show');
+          const div = document.createElement('div');
+          div.className = 'msg bot';
+          div.innerHTML = `<div class="msg-bubble">${text.replace(/\n/g,'<br>')}</div><div class="msg-time">${getTime()}</div>`;
+          msgs.insertBefore(div, typing);
+          setTimeout(() => div.classList.add('show'), 50);
+          msgs.scrollTop = msgs.scrollHeight;
+          resolve();
+        }, 1200);
+      } else {
+        const div = document.createElement('div');
+        div.className = 'msg user';
+        div.innerHTML = `<div class="msg-bubble">${text}</div><div class="msg-time">${getTime()}</div>`;
+        msgs.insertBefore(div, typing);
+        setTimeout(() => div.classList.add('show'), 50);
+        msgs.scrollTop = msgs.scrollHeight;
+        resolve();
+      }
+    }, delay);
+  });
+}
+
+function setReplies(replies) {
+  const r = document.getElementById('tgReplies');
+  r.innerHTML = '';
+  replies.forEach(text => {
+    const btn = document.createElement('button');
+    btn.className = 'reply-btn';
+    btn.textContent = text;
+    btn.onclick = () => handleReply(text);
+    r.appendChild(btn);
+  });
+}
+
+function updateInfoCards(step) {
+  document.querySelectorAll('.info-card').forEach((c, i) => {
+    c.classList.toggle('active-step', i === step);
+  });
+  document.querySelectorAll('.prog-dot').forEach((d, i) => {
+    d.classList.remove('active', 'done');
+    if (i < step) d.classList.add('done');
+    if (i === step) d.classList.add('active');
+  });
+}
+
+async function handleReply(text) {
+  if (isTyping) return;
+  isTyping = true;
+
+  setReplies([]);
+  await addMsg('user', text);
+
+  const next = tgScenario.find((s, i) => i > currentStep && s.user === text) ||
+               tgScenario[currentStep + 1];
+
+  if (!next) {
+    isTyping = false;
+    return;
+  }
+
+  currentStep++;
+  await addMsg('bot', next.bot, 400);
+
+  updateInfoCards(Math.min(next.step, 4));
+
+  if (next.replies && next.replies.length > 0) {
+    setReplies(next.replies);
+  } else {
+    document.getElementById('restartBtn').style.display = 'block';
+  }
+
+  isTyping = false;
+}
+
+async function startDemo() {
+  currentStep = 0;
+  updateInfoCards(0);
+  const first = tgScenario[0];
+  await addMsg('bot', first.bot);
+  setReplies(first.replies);
+}
+
+function restartDemo() {
+  const msgs = document.getElementById('tgMessages');
+  const typing = document.getElementById('typing');
+  msgs.innerHTML = '';
+  msgs.appendChild(typing);
+  setReplies([]);
+  document.getElementById('restartBtn').style.display = 'none';
+  currentStep = 0;
+  startDemo();
+}
+
+// ============ LMS AI CHAT ============
+const aiResponses = {
+  'Що таке критичні контрольні точки HACCP?': 'Критична контрольна точка (ССР) — етап процесу де ризик максимальний. У вашій компанії це температура зберігання (+4°C), термообробка (+72°C) і металодетектор. Рекомендую повторити модуль 3.2 — там детальна карта ССР вашого виробництва.',
+  'Як правильно документувати відхилення?': 'При виявленні відхилення: 1) Зупинити процес 2) Заповнити форму HACCP-07 в системі 3) Повідомити технолога. Я помітив, що ви пропустили цей розділ — хочете я відкрию його прямо зараз?',
+  'Покажи мій звіт для HR': '📊 Звіт Олександра станом на сьогодні:\n✅ Техніка безпеки: 94/100\n🔄 HACCP: 65% (в процесі)\n⏳ Управління командою: заблоковано\n\nЗвіт автоматично надіслано HR-менеджеру.'
+};
+
+async function sendAIMsg() {
+  const input = document.getElementById('aiInput');
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = '';
+  addAIMsg('user-msg', text);
+  setTimeout(() => {
+    const resp = aiResponses[text] || 'Добре питання! Аналізую внутрішню базу знань компанії... ' + text.slice(0,30) + '... Рекомендую звернутися до модуля 2.4 де це детально розглядається.';
+    addAIMsg('assistant', resp);
+  }, 800);
+}
+
+function askAI(el, question) {
+  document.getElementById('aiInput').value = question;
+  sendAIMsg();
+  el.style.opacity = '0.5';
+  el.style.pointerEvents = 'none';
+}
+
+function addAIMsg(type, text) {
+  const msgs = document.getElementById('aiMessages');
+  const div = document.createElement('div');
+  div.className = `ai-msg ${type === 'user-msg' ? 'system' : 'assistant'}`;
+  div.textContent = type === 'user-msg' ? '→ ' + text : text;
+  msgs.appendChild(div);
+  setTimeout(() => div.classList.add('show'), 50);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function lmsNav(el, section) {
+  document.querySelectorAll('.sidebar-item').forEach(i => i.classList.remove('active'));
+  el.classList.add('active');
+
+  const aiMsgs = document.getElementById('aiMessages');
+  const sectionMessages = {
+    courses: 'Показую ваші активні курси. Пріоритет — завершити HACCP цього тижня.',
+    progress: '📊 Ваш загальний прогрес: 55%. Ви на 12% випереджаєте середній показник по компанії!',
+    reports: '📋 Останній звіт сформовано 2 дні тому. Сформувати новий та надіслати HR?',
+    path: '🎯 Ваш персоналізований шлях: HACCP → Управління командою → Сертифікація керівника. Орієнтовно 3 тижні.',
+    analytics: '🧠 Аналіз показує: найкращий час для навчання у вас — вівторок/четвер 10-12 год. Хочете заплановані нагадування?'
+  };
+
+  if (sectionMessages[section]) {
+    addAIMsg('assistant', sectionMessages[section]);
+  }
+}
+
+function selectCourse(el, course) {
+  document.querySelectorAll('.course-item').forEach(c => c.classList.remove('active-course'));
+  el.classList.add('active-course');
+
+  const msgs = {
+    haccp: 'Відкриваю курс HACCP. Ви зупинились на розділі 3.2 "Документування відхилень". Продовжимо?',
+    safety: '✅ Цей курс завершено з оцінкою 94/100. Сертифікат доступний для завантаження.',
+    management: '🔒 Курс буде доступний після завершення HACCP. Залишилось 35% матеріалу — приблизно 2 години.'
+  };
+
+  addAIMsg('assistant', msgs[course] || 'Курс вибрано.');
+}
+
+// ============ SCROLL ANIMATIONS ============
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) e.target.classList.add('visible');
+  });
+}, { threshold: 0.1 });
+
+document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+
+// Animate compare bars on scroll
+const barObserver = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      e.target.querySelectorAll('.cbar-fill').forEach(bar => {
+        bar.style.width = bar.getAttribute('data-w') + '%';
+      });
+    }
+  });
+}, { threshold: 0.3 });
+
+const compareSection = document.getElementById('compareSection');
+if (compareSection) barObserver.observe(compareSection);
+
+// Start telegram demo on load
+window.addEventListener('load', () => {
+  setTimeout(startDemo, 800);
+});
+</script>
+</body>
+</html>
